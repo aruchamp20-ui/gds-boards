@@ -10,7 +10,7 @@ export function renderWorkspace(wsId) {
   const boards = data.boardsIn(wsId);
   const folders = data.foldersIn(wsId);
   const recents = data.prefs().recentBoards.map(data.board).filter((b) => b && b.state === 'active' && b.workspace_id === wsId);
-  const members = ws.is_default ? data.users() : data.users();
+  const members = data.users().filter((u) => !u.deactivated); // deactivated monday users stay on their cells but are not members
   const page = h('div', { class: 'page' });
   const title = h('h1', { title: 'Click to rename', onclick: () => editInline(title, { onSave: (v) => data.updateWorkspace(wsId, { name: v }) }) }, ws.name);
   const desc = h('p', { class: 'muted', style: { margin: '0 0 var(--space-3)', minHeight: '20px' }, title: 'Click to edit the description', onclick: () => editInline(desc, { multiline: true, select: false, onSave: (v) => data.updateWorkspace(wsId, { description: v }) }) }, ws.description || 'Add a description');
