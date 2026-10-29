@@ -18,8 +18,9 @@ export async function gql(query, variables = {}, { retries = 4 } = {}) {
     const res = await fetch('https://api.monday.com/v2', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: token, 'API-Version': '2025-01' }, body: JSON.stringify({ query, variables }) });
     const text = await res.text();
     let json; try { json = JSON.parse(text); } catch { json = null; }
-    const complexity = json?.errors?.some((e) => /complexity|rate limit/i.test(e.message || '')) || res.status === 429;
-    if ((complexity || res.status >= 500) && attempt < retries) { const wait = complexity ? 30000 : 3000 * (attempt + 1); process.stderr.write(`  monday API busy (${res.status}), waiting ${wait / 1000}s\n`); await new Promise((r) => setTimeout(r, wait)); continue; }
+    const msgs = (json?.errors || []).map((e) => e.message || '').join(' ');
+    const complexity = /complexity|rate limit/i.test(msgs) || res.status === 429;
+    if ((complexity || res.status >= 500) && attempt < retries) { const m = /reset in (\d+) seconds/i.exec(msgs); const wait = complexity ? (m ? (Number(m[1]) + 1) * 1000 : 30000) : 3000 * (attempt + 1); process.stderr.write(`  monday API busy (${res.status}), waiting ${wait / 1000}s\n`); await new Promise((r) => setTimeout(r, wait)); continue; }
     if (!res.ok) throw new Error(`monday API ${res.status}: ${text.slice(0, 300)}`);
     if (json?.errors?.length) throw new Error(`monday GraphQL: ${json.errors.map((e) => e.message).join('; ').slice(0, 500)}`);
     return json.data;

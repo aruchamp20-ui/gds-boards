@@ -45,7 +45,7 @@ export const PEOPLE_TYPES = new Set(['people', 'person', 'team', 'multiple-perso
 export function mapBoard(b, { index, wsId, now, folderIds }) {
   const folder = b.board_folder_id && folderIds.has(String(b.board_folder_id)) ? `mf_${b.board_folder_id}` : null;
   const owners = (b.owners || []).map((u) => userId(u.id)); const subs = (b.subscribers || []).map((u) => userId(u.id));
-  return { id: `mb_${b.id}`, monday_id: String(b.id), workspace_id: `mw_${wsId}`, folder_id: folder, name: b.name, description: (b.description || '').slice(0, 1000), kind: ['public', 'private', 'share'].includes(b.board_kind) ? b.board_kind : 'public', state: 'active', permissions: ['everyone', 'collaborators', 'assignee', 'owners'].includes(b.permissions) ? b.permissions : 'everyone', item_terminology: (b.item_terminology || 'item').toLowerCase(), position: index + 1, created_by: b.creator?.id ? userId(b.creator.id) : null, owner_ids: owners, subscriber_ids: [...new Set([...owners, ...subs])], deleted_at: null, created_at: b.updated_at || now, updated_at: b.updated_at || now, last_viewed: {}, source: { kind: 'monday', board_id: String(b.id), url: b.url || `https://gdsinternational.monday.com/boards/${b.id}`, imported_at: now, items_count: b.items_count ?? null } };
+  return { id: `mb_${b.id}`, monday_id: String(b.id), workspace_id: `mw_${wsId}`, folder_id: folder, name: b.name, description: (b.description || '').slice(0, 1000), kind: ['public', 'private', 'share'].includes(b.board_kind) ? b.board_kind : 'public', state: 'active', permissions: ['everyone', 'collaborators', 'assignee', 'owners'].includes(b.permissions) ? b.permissions : 'everyone', item_terminology: (b.item_terminology || 'item').toLowerCase(), position: index + 1, created_by: b.creator?.id ? userId(b.creator.id) : owners[0] || null, owner_ids: owners, subscriber_ids: [...new Set([...owners, ...subs])], deleted_at: null, created_at: b.updated_at || now, updated_at: b.updated_at || now, last_viewed: {}, source: { kind: 'monday', board_id: String(b.id), url: b.url || `https://gdsinternational.monday.com/boards/${b.id}`, imported_at: now, items_count: b.items_count ?? null } };
 }
 export function mapGroup(g, index, boardId, now) { return { id: `mg_${g.id}`, monday_id: g.id, board_id: `mb_${boardId}`, title: g.title || 'Group', color: paletteFor(g.color), position: Number.isFinite(parseFloat(g.position)) ? parseFloat(g.position) : index + 1, archived: !!(g.archived || g.deleted), created_at: now }; }
 
@@ -62,7 +62,7 @@ export function mapColumn(mc, index, boardId, now) {
   switch (mc.type) {
     case 'name': return t('name', {}, { position: -1 });
     case 'status': case 'color': return t('status', { labels: statusLabels(s) });
-    case 'dropdown': return t('dropdown', { options: (s.labels || []).map((l, i) => ({ id: String(l.id), text: l.name ?? String(l.id), color: PALETTE_NAMES[i % PALETTE_NAMES.length] })) });
+    case 'dropdown': return t('dropdown', { options: (s.labels || []).map((l, i) => ({ id: String(l.id), text: l.name ?? l.label ?? String(l.id), color: PALETTE_NAMES[i % PALETTE_NAMES.length] })) });
     case 'tags': return t('dropdown', { options: [] }, { tags: true });
     case 'people': case 'person': case 'team': case 'multiple-person': return t('people', { limit: 0 });
     case 'date': return t('date', { show_time: !!s.time });
@@ -114,7 +114,7 @@ export function mapValue(mc, col, cv, ctx) {
     case 'people': case 'person': case 'team': case 'multiple-person': {
       const pt = v?.personsAndTeams || []; const names = text ? String(text).split(',').map((s) => s.trim()) : [];
       const sameOrder = names.length === pt.length; // monday's text lists the same people in the same order, which names deactivated users the users query no longer returns
-      const user_ids = pt.map((p, i) => ((p.kind || 'person') === 'person' ? ctx.user(p.id, sameOrder ? names[i] : null) : null)).filter(Boolean);
+      const user_ids = pt.map((p, i) => (p.kind !== 'team' ? ctx.user(p.id, sameOrder ? names[i] : null) : null)).filter(Boolean); // kinds: person | team | agent
       const team_ids = pt.filter((p) => p.kind === 'team').map((p) => `mt_${p.id}`);
       return user_ids.length || team_ids.length ? { user_ids, ...(team_ids.length ? { team_ids } : {}) } : null;
     }
@@ -122,7 +122,7 @@ export function mapValue(mc, col, cv, ctx) {
     case 'timeline': return v?.from ? { from: v.from, to: v.to || v.from } : null;
     case 'week': { const w = v?.week; return w?.startDate ? { from: w.startDate, to: w.endDate || w.startDate } : null; }
     case 'numbers': case 'numeric': case 'auto_number': case 'autonumber': case 'progress': { const n = parseNumber(text); return n == null ? null : { number: n }; }
-    case 'vote': { const n = (v?.votersIds || []).length; return n ? { number: n } : null; }
+    case 'vote': { const n = (v?.voter_ids || v?.votersIds || []).length; return n ? { number: n } : null; }
     case 'checkbox': case 'boolean': return v?.checked === true || v?.checked === 'true' ? { checked: true } : null;
     case 'link': return v?.url ? { url: v.url, text: v.text && v.text !== v.url ? v.text : '' } : null;
     case 'email': return v?.email ? { email: v.email } : null;

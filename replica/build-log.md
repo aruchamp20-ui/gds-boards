@@ -30,3 +30,7 @@ Harder than it looked: keeping focus after a re-render (the whole page re-render
 Not built yet (see features.csv): sign-in, subitems, files, moving boards between workspaces, nested folders, item default values, bring-it-back, board discussions, view locking. Next: `/replica-test`, then `/replica-backend` for auth, Postgres and realtime.
 
 Clone screenshots for /replica-diff: `replica/clone-screens/` (S01, S02, S03, S04, S05, S06 at 1280 wide).
+
+## monday.com import (2026-10-29)
+
+`node tools/monday-import.mjs --workspace 9545876` exports every active board of the GDS Group workspace into `data/import/` (gitignored); the app imports it on boot and from the avatar menu. `node tools/monday-verify.mjs --boards 40 --items 8` samples cells against monday live. Persistence moved from localStorage (5 MB) to IndexedDB with one record per board. Trial on 3 boards (2,148 items): counts exact, 732/732 sampled cells match after two mapping fixes (default status label arrives as text only; deactivated users are named from the cell text).

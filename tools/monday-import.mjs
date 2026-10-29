@@ -52,7 +52,7 @@ const errors = []; const entries = [];
 async function exportBoard(b, index) {
   const file = `boards/mb_${b.id}.json`;
   if (resume && existsSync(`${out}/${file}`)) { try { const prev = JSON.parse(readFileSync(`${out}/${file}`, 'utf8')); entries.push(prev.summary); log(`skip ${b.name} (resume)`); return; } catch {} }
-  const sRes = await gql(`query($id: [ID!]) { boards(ids: $id) { id name description board_kind state permissions item_terminology url updated_at workspace_id board_folder_id items_count creator { id } owners { id } subscribers { id } columns { id title type settings_str description archived width } groups { id title color position archived deleted } views { id name type } } }`, { id: [b.id] });
+  const sRes = await gql(`query($id: [ID!]) { boards(ids: $id) { id name description board_kind state permissions item_terminology url updated_at workspace_id board_folder_id items_count owners { id } subscribers { id } columns { id title type settings_str description archived width } groups { id title color position archived deleted } views { id name type } } }`, { id: [b.id] });
   const mb = sRes.boards?.[0]; if (!mb) throw new Error('board not returned');
   const board = M.mapBoard(mb, { index, wsId, now, folderIds });
   const cols = []; const skipped = [];

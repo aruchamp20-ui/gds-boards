@@ -95,3 +95,4 @@ Templates center and imports from Excel or Trello,onboarding,could,yes,skip,thei
 Guests and Enterprise permissions,permissions,could,yes,skip,Enterprise surface
 Mobile apps,mobile,could,yes,skip,web only
 Public board sharing and embeds,sharing,could,yes,skip,needs the hosted backend first
+Import boards from monday.com (workspace / folder / board ids) with live verification,migration,must,no,yes,our addition: tools/monday-import.mjs + tools/monday-verify.mjs; auto-loads on boot from data/import
