@@ -30,13 +30,17 @@ export function renderWorkspace(wsId) {
   else {
     const loose = boards.filter((b) => !b.folder_id);
     if (loose.length) page.append(h('div', { class: 'card-list' }, loose.map(boardCard)));
-    for (const f of folders) {
-      const inF = boards.filter((b) => b.folder_id === f.id);
-      page.append(h('h2', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: 'var(--text-md)' } }, icon('folder'), f.name, h('span', { class: 'muted', style: { fontWeight: 400 } }, `${inF.length}`)));
-      page.append(inF.length ? h('div', { class: 'card-list' }, inF.map(boardCard)) : h('p', { class: 'muted' }, 'Empty folder.'));
-    }
+    const renderFolder = (f, depth) => {
+      const inF = boards.filter((b) => b.folder_id === f.id); const subs = data.folderTree(wsId, f.id);
+      page.append(h('h2', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: 'var(--text-md)', marginLeft: `${depth * 20}px` } }, icon('folder'), f.name, h('span', { class: 'muted', style: { fontWeight: 400 } }, `${inF.length}`)));
+      if (inF.length) page.append(h('div', { class: 'card-list', style: { marginLeft: `${depth * 20}px` } }, inF.map(boardCard)));
+      else if (!subs.length) page.append(h('p', { class: 'muted', style: { marginLeft: `${depth * 20}px` } }, 'Empty folder.'));
+      subs.forEach((sf) => renderFolder(sf, depth + 1));
+    };
+    data.folderTree(wsId, null).forEach((f) => renderFolder(f, 0));
   }
-  page.append(h('h2', {}, 'Members'), h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' } }, members.map((u) => h('span', { class: 'chip soft', style: { height: '32px', gap: '8px' } }, avatarGroup([u], 1, 'sm'), u.name))));
+  const shown = members.filter((u) => !u.deactivated).slice(0, 24);
+  page.append(h('h2', {}, `Members · ${members.length}`), h('div', { style: { display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' } }, shown.map((u) => h('span', { class: 'chip soft', style: { height: '32px', gap: '8px' } }, avatarGroup([u], 1, 'sm'), u.name)), members.length > shown.length ? h('span', { class: 'chip soft', style: { height: '32px' } }, `+${members.length - shown.length} more`) : null));
   return page;
 }
 

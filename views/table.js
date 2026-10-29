@@ -4,6 +4,8 @@ import * as data from '../lib/data.js';
 import { typeOf, renderCell, cellText } from '../lib/columns.js';
 import { openColumnCenter, openLabelEditor, setFocusTarget } from './board.js';
 
+const ROWS_PER_PAGE = 200;
+const shownRows = new Map(); // group id -> rows revealed this session
 export function renderTable(model) {
   const { board: b, view: v, draft, ctx, columns, groups, visible, selection, onSelect } = model;
   const nameCol = columns.find((c) => c.type === 'name');
@@ -45,7 +47,9 @@ export function renderTable(model) {
     const scroll = h('div', { class: 'grid-scroll' });
     const table = h('div', { class: 'grid-table', role: 'table', 'aria-label': g.title, style: { '--cols': colsTemplate() } });
     table.append(renderHeaderRow(g, items));
-    items.forEach((it) => table.append(renderRow(it, g)));
+    const cap = shownRows.get(g.id) || ROWS_PER_PAGE; // shortcut: no virtual scrolling, rows render in pages of 200; upgrade to a virtual list if boards pass ~10k rows
+    items.slice(0, cap).forEach((it) => table.append(renderRow(it, g)));
+    if (items.length > cap) { const more = h('div', { class: 'row add-row', role: 'row' }, h('div', { class: 'cell cell-check', role: 'cell' }), h('div', { class: 'cell cell-name', role: 'cell' }, h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => { shownRows.set(g.id, cap + ROWS_PER_PAGE); rerender(); } }, `Show ${Math.min(ROWS_PER_PAGE, items.length - cap)} more of ${items.length}`), h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => { shownRows.set(g.id, items.length); rerender(); } }, 'Show all'))); dataCols.forEach(() => more.append(h('div', { class: 'cell', role: 'cell' }))); more.append(h('div', { class: 'cell', role: 'cell' })); table.append(more); }
     table.append(renderAddRow(g));
     if (items.length && dataCols.some((c) => typeOf(c).summary)) table.append(renderSummaryRow(g, items));
     scroll.append(table); sec.append(scroll);

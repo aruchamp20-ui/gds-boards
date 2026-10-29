@@ -110,6 +110,7 @@ export function boardMenuItems(b) {
   const owner = data.isOwner(b);
   return [
     { label: 'Open', icon: 'board', onSelect: () => navigate(`#/b/${b.id}`) },
+    b.source?.url ? { label: 'Open in monday.com', icon: 'link', onSelect: () => window.open(b.source.url, '_blank', 'noopener') } : null,
     { label: 'Rename board', icon: 'edit', onSelect: async () => { const v = await promptDialog({ title: 'Rename board', label: 'Board name', value: b.name }); if (v) data.updateBoard(b.id, { name: v }); } },
     { label: 'Edit description', icon: 'longtext', onSelect: () => openDialog({ title: 'Board description', body: ({ close }) => { const ta = h('textarea', { class: 'textarea', maxlength: 1000, 'aria-label': 'Description' }, b.description); ta.addEventListener('input', () => (ta.value = ta.value.replace(/[<>]/g, ''))); return h('div', {}, h('div', { class: 'field' }, ta, h('div', { class: 'hint' }, 'Up to 1,000 characters. No < or > characters.')), h('div', { class: 'actions' }, h('button', { type: 'button', class: 'btn btn-secondary', onclick: close }, 'Cancel'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => { data.updateBoard(b.id, { description: ta.value.trim() }); close(); } }, 'Save'))); } }) },
     { label: data.isFavorite(b.id) ? 'Remove from favorites' : 'Add to favorites', icon: 'star', onSelect: () => data.toggleFavorite(b.id) },

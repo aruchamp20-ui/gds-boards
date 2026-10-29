@@ -4,6 +4,8 @@ import * as data from '../lib/data.js';
 import { typeOf, renderCell } from '../lib/columns.js';
 import { openViewSettings } from './board.js';
 
+const CARDS_PER_LANE = 100;
+const shownCards = new Map();
 export function renderKanban(model) {
   const { board: b, view: v, draft, ctx, columns, visible, groups } = model;
   const term = b.item_terminology || 'item';
@@ -35,7 +37,9 @@ export function renderKanban(model) {
       lane.append(h('div', { class: `lane-head ${over ? 'over' : ''}` }, h('span', { class: 'truncate' }, l.text || 'No status'), h('span', { class: 'n' }, limit ? `${inLane.length} / ${limit}` : inLane.length), addBtn, menuBtn));
       const body = h('div', { class: 'lane-body' });
       if (!inLane.length) body.append(h('div', { class: 'drop-hint' }, 'Drop cards here'));
-      inLane.forEach((it) => body.append(renderCard(it)));
+      const laneKey = `${v.id}:${l.id}${keySuffix}`; const cap = shownCards.get(laneKey) || CARDS_PER_LANE;
+      inLane.slice(0, cap).forEach((it) => body.append(renderCard(it)));
+      if (inLane.length > cap) body.append(h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => { shownCards.set(laneKey, cap + CARDS_PER_LANE); window.dispatchEvent(new HashChangeEvent('hashchange')); } }, `Show ${Math.min(CARDS_PER_LANE, inLane.length - cap)} more of ${inLane.length}`));
       lane.append(body); board.append(lane);
     }
     return board;

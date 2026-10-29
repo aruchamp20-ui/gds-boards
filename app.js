@@ -8,7 +8,7 @@ import { renderSearch } from './views/search.js';
 import { renderTrash } from './views/trash.js';
 import { openNotifications } from './views/notifications.js';
 
-data.boot();
+await data.boot();
 const app = document.getElementById('app');
 const leftpane = document.getElementById('leftpane');
 const topbar = document.getElementById('topbar');
@@ -75,15 +75,30 @@ function renderLeftPane() {
         entry('#/search', 'search', 'Search everything', route.name === 'search')),
       favs.length ? h('div', { class: 'lp-section' }, h('div', { class: 'lp-section-title' }, 'Favorites'), h('div', { class: 'lp-boards' }, favs.map(boardEntry))) : null,
       h('div', { class: 'lp-section' },
-        h('div', { class: 'lp-section-title' }, h('span', {}, 'Boards'), h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': 'Add', onclick: (e) => openAddMenu(e.currentTarget, ws.id) }, icon('plus', 'sm'))),
-        h('div', { class: 'lp-boards' },
-          boards.filter((b) => !b.folder_id).map(boardEntry),
-          folders.map((f) => { const open = !data.prefs().closedFolders?.[f.id]; const inF = boards.filter((b) => b.folder_id === f.id); return h('div', {},
-            h('button', { type: 'button', class: 'lp-entry', 'aria-expanded': open, onclick: () => { const cf = { ...(data.prefs().closedFolders || {}) }; if (open) cf[f.id] = true; else delete cf[f.id]; data.setPref('closedFolders', cf); render(); }, oncontextmenu: (e) => { e.preventDefault(); openMenu(e.currentTarget, folderMenu(f)); } }, icon(open ? 'chevD' : 'chevR', 'sm'), icon('folder'), h('span', { class: 'label' }, f.name), h('span', { class: 'muted', style: { fontSize: 'var(--text-xs)' } }, inF.length)),
-            open ? h('div', { class: 'lp-folder' }, inF.map(boardEntry), !inF.length ? h('div', { class: 'muted', style: { padding: '4px 10px', fontSize: 'var(--text-xs)' } }, 'Empty') : null) : null); }),
-          !boards.length ? h('div', { class: 'muted', style: { padding: '8px', fontSize: 'var(--text-sm)' } }, 'No boards yet') : null))),
+        h('div', { class: 'lp-section-title' }, h('span', {}, `Boards · ${boards.length}`), h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': 'Add', onclick: (e) => openAddMenu(e.currentTarget, ws.id) }, icon('plus', 'sm'))),
+        boards.length > 8 ? h('div', { class: 'search', style: { margin: '0 0 var(--space-1)' } }, icon('search', 'sm'), h('input', { placeholder: 'Filter boards', 'aria-label': 'Filter boards', value: lpFilter, style: { width: '100%' }, oninput: (e) => { lpFilter = e.target.value; leftpane.querySelector('.lp-boards')?.replaceWith(boardTree(ws, boards, boardEntry)); } })) : null,
+        boardTree(ws, boards, boardEntry))),
     h('button', { type: 'button', class: 'btn btn-primary lp-add', onclick: (e) => openAddMenu(e.currentTarget, ws.id) }, icon('plus'), h('span', { class: 'label' }, 'Add')),
   );
+}
+let lpFilter = '';
+function boardTree(ws, boards, boardEntry) {
+  const q = lpFilter.trim().toLowerCase(); const match = (b) => !q || b.name.toLowerCase().includes(q);
+  const closed = data.prefs().closedFolders || {};
+  const renderFolder = (f, depth) => {
+    const inF = boards.filter((b) => b.folder_id === f.id && match(b));
+    const subs = data.folderTree(ws.id, f.id).map((sf) => renderFolder(sf, depth + 1)).filter(Boolean);
+    if (q && !inF.length && !subs.length) return null;
+    const open = q ? true : !closed[f.id]; const total = boards.filter((b) => b.folder_id === f.id).length;
+    return h('div', { style: { paddingLeft: depth ? 'var(--space-3)' : '0' } },
+      h('button', { type: 'button', class: 'lp-entry', 'aria-expanded': open, onclick: () => { const cf = { ...closed }; if (open) cf[f.id] = true; else delete cf[f.id]; data.setPref('closedFolders', cf); render(); }, oncontextmenu: (e) => { e.preventDefault(); openMenu(e.currentTarget, folderMenu(f)); } }, icon(open ? 'chevD' : 'chevR', 'sm'), icon('folder'), h('span', { class: 'label' }, f.name), h('span', { class: 'muted', style: { fontSize: 'var(--text-xs)' } }, total)),
+      open ? h('div', { class: 'lp-folder' }, inF.map(boardEntry), subs, !inF.length && !subs.length ? h('div', { class: 'muted', style: { padding: '4px 10px', fontSize: 'var(--text-xs)' } }, 'Empty') : null) : null);
+  };
+  const loose = boards.filter((b) => !b.folder_id && match(b));
+  const tree = data.folderTree(ws.id, null).map((f) => renderFolder(f, 0)).filter(Boolean);
+  return h('div', { class: 'lp-boards' }, loose.map(boardEntry), tree,
+    !boards.length ? h('div', { class: 'muted', style: { padding: '8px', fontSize: 'var(--text-sm)' } }, 'No boards yet') : null,
+    q && !loose.length && !tree.length ? h('div', { class: 'muted', style: { padding: '8px', fontSize: 'var(--text-sm)' } }, 'No boards match') : null);
 }
 function folderMenu(f) {
   return [
@@ -134,8 +149,9 @@ function renderTopBar() {
   const bell = h('button', { type: 'button', class: 'icon-btn', 'aria-label': `Notifications${unread ? `, ${unread} unread` : ''}`, style: { position: 'relative' }, onclick: () => openNotifications(bell) }, icon('bell'), unread ? h('span', { class: 'dot' }) : null);
   const av = h('button', { type: 'button', class: 'icon-btn', 'aria-label': `Account menu for ${me.name}`, onclick: () => openMenu(av, [
     { label: me.name, icon: 'person', disabled: true },
-    { label: 'Switch user (demo)', icon: 'people', submenu: data.users().map((u) => ({ label: u.name, icon: u.id === me.id ? 'check' : undefined, onSelect: () => { data.setMe(u.id); toast(`Now acting as ${u.name}`); } })) },
+    { label: 'Switch user (demo)', icon: 'people', onSelect: openUserSwitcher },
     { divider: true },
+    { label: 'Import from monday export', icon: 'download', onSelect: () => runImport(true) },
     { label: 'Trash and archive', icon: 'trash', onSelect: () => navigate('#/trash') },
     { label: 'Keyboard shortcuts', icon: 'help', kbd: 'Shift+?', onSelect: openShortcuts },
     { divider: true },
@@ -149,6 +165,29 @@ function renderTopBar() {
     h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Help and shortcuts', onclick: openShortcuts }, icon('help')),
     av,
   );
+}
+function openUserSwitcher() {
+  let q = '';
+  openDialog({ title: 'Act as (demo)', body: ({ close }) => {
+    const list = h('div', { class: 'check-list', style: { maxHeight: '50vh', overflow: 'auto' } });
+    const input = h('input', { class: 'input', placeholder: 'Search people', 'aria-label': 'Search people', oninput: () => { q = input.value.toLowerCase(); draw(); } });
+    const draw = () => list.replaceChildren(...data.users().filter((u) => u.name.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)).slice(0, 60).map((u) => h('button', { type: 'button', class: 'menu-item', onclick: () => { data.setMe(u.id); close(); toast(`Now acting as ${u.name}`); } }, avatar(u, 'sm'), h('span', { class: 'label' }, u.name), u.id === data.me().id ? icon('check', 'sm') : h('span', { class: 'kbd' }, u.title || ''))));
+    draw();
+    return h('div', {}, h('div', { class: 'field' }, input), list);
+  }, actions: [{ label: 'Close' }] });
+}
+let importToast = null;
+function progressToast(done, total) {
+  if (!importToast || !document.contains(importToast)) importToast = toast('Importing boards from monday.com…', { ms: 600000 });
+  importToast.firstChild.textContent = `Importing boards from monday.com: ${done} of ${total}`;
+  if (done >= total) setTimeout(() => importToast?.remove(), 2500);
+}
+async function runImport(force) {
+  const r = await data.autoImport({ force, onProgress: progressToast });
+  if (!r) { if (force) toast('No export found at data/import/index.json. Run node tools/monday-import.mjs first.', { kind: 'danger' }); return; }
+  if (r.skipped) { if (force) toast('Already up to date with the export'); return; }
+  toast(`Imported ${r.imported} board${r.imported === 1 ? '' : 's'} from monday.com`, { kind: 'success' });
+  if (r.failed) toast(`${r.failed} board file${r.failed === 1 ? '' : 's'} could not be loaded`, { kind: 'danger' });
 }
 export function openShortcuts() {
   const rows = [['Ctrl+B', 'Search everything'], ['Ctrl+.', 'Collapse or expand the left pane'], ['Esc', 'Close the item card, dialogs and menus'], ['Enter', 'Edit the focused cell'], ['Tab / Shift+Tab', 'Next / previous cell'], ['Backspace', 'Clear the focused cell'], ['Ctrl+F', 'Search the board'], ['Ctrl+G', 'Collapse or expand all groups'], ['Ctrl+Shift+G', 'New group'], ['Ctrl+Shift+C', 'New column'], ['Ctrl+Shift+L', 'Board activity log'], ['Shift+?', 'This list']];
@@ -172,3 +211,4 @@ document.addEventListener('keydown', (e) => {
 });
 
 render();
+if (!new URLSearchParams(location.search).has('noimport')) runImport(false);
