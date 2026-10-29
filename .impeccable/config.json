@@ -20,6 +20,15 @@
         ],
         "createdAt": "2026-10-29T10:47:53.546Z",
         "reason": "replica recon: Kanban lanes carry their status label colour as a top strip (replica/recon.md components: Kanban lane); reproducing the original's UX pattern"
+      },
+      {
+        "rule": "monotonous-spacing",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-10-29T12:58:52.917Z",
+        "reason": "false positive: index.html is the app shell with no spacing declarations; the spacing scale (--space-1..7, 4-48px) lives in styles/app.css"
       }
     ]
   }
