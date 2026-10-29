@@ -107,7 +107,7 @@ export function composeBox({ placeholder, onPost, value = '', compact = false, s
     const pos = ta.selectionStart; const before = ta.value.slice(0, pos); const m = before.match(/@([\w ]*)$/);
     if (!m) { closeMention(); return; }
     const q = m[1].toLowerCase();
-    const opts = [...data.users().map((u) => ({ name: u.name, sub: u.title })), ...data.teams().map((t) => ({ name: t.name, sub: 'team' }))].filter((o) => o.name.toLowerCase().includes(q)).slice(0, 8);
+    const opts = [...data.activeUsers().map((u) => ({ name: u.name, sub: u.title })), ...data.teams().map((t) => ({ name: t.name, sub: 'team' }))].filter((o) => o.name.toLowerCase().includes(q)).slice(0, 8);
     if (!opts.length) { closeMention(); return; }
     if (!menu) { menu = h('div', { class: 'mention-menu', role: 'listbox' }); box.style.position = 'relative'; box.append(menu); }
     menu.style.top = `${ta.offsetTop + ta.offsetHeight}px`; menu.style.left = '8px';

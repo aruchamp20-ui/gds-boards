@@ -171,7 +171,7 @@ function openUserSwitcher() {
   openDialog({ title: 'Act as (demo)', body: ({ close }) => {
     const list = h('div', { class: 'check-list', style: { maxHeight: '50vh', overflow: 'auto' } });
     const input = h('input', { class: 'input', placeholder: 'Search people', 'aria-label': 'Search people', oninput: () => { q = input.value.toLowerCase(); draw(); } });
-    const draw = () => list.replaceChildren(...data.users().filter((u) => !u.deactivated && (u.name.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q))).slice(0, 60).map((u) => h('button', { type: 'button', class: 'menu-item', onclick: () => { data.setMe(u.id); close(); toast(`Now acting as ${u.name}`); } }, avatar(u, 'sm'), h('span', { class: 'label' }, u.name), u.id === data.me().id ? icon('check', 'sm') : h('span', { class: 'kbd' }, u.title || ''))));
+    const draw = () => list.replaceChildren(...data.activeUsers().filter((u) => u.name.toLowerCase().includes(q) || (u.email || '').toLowerCase().includes(q)).slice(0, 60).map((u) => h('button', { type: 'button', class: 'menu-item', onclick: () => { data.setMe(u.id); close(); toast(`Now acting as ${u.name}`); } }, avatar(u, 'sm'), h('span', { class: 'label' }, u.name), u.id === data.me().id ? icon('check', 'sm') : h('span', { class: 'kbd' }, u.title || ''))));
     draw();
     return h('div', {}, h('div', { class: 'field' }, input), list);
   }, actions: [{ label: 'Close' }] });
