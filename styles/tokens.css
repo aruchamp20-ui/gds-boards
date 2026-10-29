@@ -1,15 +1,17 @@
 /* generated from replica/design/tokens.json — edit the JSON, then: node replica/design/build-tokens.mjs */
 :root {
   --color-bg: #ffffff;
-  --color-surface: #f6f7fb;
-  --color-surface-2: #eceef5;
-  --color-border: #d8dbe6;
-  --color-border-input: #7a7f94;
-  --color-text: #1f2330;
-  --color-text-muted: #5c6273;
-  --color-accent: #2f5bea;
-  --color-accent-soft: #e6ecfd;
+  --color-surface: #f7f6fb;
+  --color-surface-2: #eeedf5;
+  --color-border: #dddbe8;
+  --color-border-input: #7b7892;
+  --color-text: #0d0d0d;
+  --color-text-muted: #5c5a6e;
+  --color-accent: #5f4fe0;
+  --color-accent-soft: #eeebfe;
   --color-on-accent: #ffffff;
+  --color-brand: #8272f6;
+  --color-brand-warm: #ceac8e;
   --color-danger: #c62f2f;
   --color-success: #1f7a4d;
   --color-warning: #9a6700;
@@ -31,14 +33,14 @@
   --color-label-grey: #6b7280;
   --color-label-slate: #475569;
   --color-label-dark: #1f2937;
-  --font-sans: Figtree, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+  --font-sans: Poppins, 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
   --font-mono: ui-monospace, Consolas, Menlo, monospace;
   --text-xs: 12px; --leading-xs: 16px; --weight-xs: 500;
   --text-sm: 13px; --leading-sm: 18px; --weight-sm: 400;
   --text-base: 14px; --leading-base: 20px; --weight-base: 400;
   --text-md: 15px; --leading-md: 22px; --weight-md: 500;
   --text-lg: 18px; --leading-lg: 24px; --weight-lg: 600;
-  --text-xl: 24px; --leading-xl: 30px; --weight-xl: 700;
+  --text-xl: 24px; --leading-xl: 30px; --weight-xl: 600;
   --text-display: 32px; --leading-display: 38px; --weight-display: 700;
   --space-0: 0px;
   --space-1: 4px;
@@ -52,8 +54,8 @@
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-pill: 999px;
-  --shadow-card: 0 1px 2px rgba(20,24,40,.06), 0 1px 3px rgba(20,24,40,.10);
-  --shadow-pop: 0 8px 24px rgba(20,24,40,.18);
+  --shadow-card: 0 1px 2px rgba(13,13,13,.06), 0 1px 3px rgba(13,13,13,.10);
+  --shadow-pop: 0 8px 24px rgba(13,13,13,.18);
   --motion-fast: 120ms;
   --motion-base: 200ms;
   --motion-ease: cubic-bezier(.2,.8,.2,1);

@@ -64,7 +64,7 @@ function renderLeftPane() {
   };
   leftpane.replaceChildren(
     h('div', { class: 'lp-top' },
-      h('a', { class: 'lp-brand', href: '#/' }, h('span', { class: 'logo' }, 'B'), h('span', {}, 'Boards')),
+      h('a', { class: 'lp-brand', href: '#/', 'aria-label': 'GDS Boards home' }, h('img', { src: 'assets/brand/gds-logo-charcoal.png', alt: 'GDS' }), h('span', {}, 'Boards')),
       h('button', { type: 'button', class: 'icon-btn sm chev', 'aria-label': collapsed ? 'Expand navigation' : 'Collapse navigation', title: 'Ctrl+.', onclick: () => data.setPref('lpCollapsed', !collapsed) || render() }, icon('collapse'))),
     h('div', { class: 'lp-scroll' },
       h('button', { type: 'button', class: 'ws-switcher', 'aria-label': `Workspace: ${ws.name}. Switch workspace`, onclick: (e) => openWorkspaceSwitcher(e.currentTarget, ws) },

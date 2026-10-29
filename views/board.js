@@ -78,7 +78,7 @@ function renderHeader(b, views, v, draft) {
   const desc = h('div', { class: 'board-desc', hidden: !b.description, title: 'Click to edit', onclick: () => editInline(desc, { multiline: true, select: false, onSave: (d) => data.updateBoard(b.id, { description: d.replace(/[<>]/g, '').slice(0, 1000) }) }) }, b.description || 'Add a description for the team');
   const descBtn = h('button', { type: 'button', class: 'icon-btn sm', 'aria-label': 'Show description', 'aria-expanded': !desc.hidden, onclick: () => { desc.hidden = !desc.hidden; descBtn.setAttribute('aria-expanded', !desc.hidden); if (!desc.hidden && !b.description) desc.click(); } }, icon('chevD', 'sm'));
   const fav = data.isFavorite(b.id);
-  const star = h('button', { type: 'button', class: `icon-btn sm ${fav ? 'active' : ''}`, 'aria-label': fav ? 'Remove from favorites' : 'Add to favorites', 'aria-pressed': fav, onclick: () => data.toggleFavorite(b.id) }, icon('star', 'sm'));
+  const star = h('button', { type: 'button', class: `icon-btn sm star ${fav ? 'active' : ''}`, 'aria-label': fav ? 'Remove from favorites' : 'Add to favorites', 'aria-pressed': fav, onclick: () => data.toggleFavorite(b.id) }, icon('star', 'sm'));
   if (fav) star.querySelector('svg').style.fill = 'currentColor';
   const lv = Object.entries(b.last_viewed || {}).sort((a, c) => c[1].localeCompare(a[1])).map(([id]) => data.user(id)).filter(Boolean);
   const viewed = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: 'Activity log and who viewed the board', 'aria-label': 'Open the activity log', onclick: () => setParam('log', 'viewed') }, avatarGroup(lv, 3, 'sm'));

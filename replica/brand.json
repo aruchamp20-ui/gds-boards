@@ -1,0 +1,9 @@
+{
+  "name": "GDS Boards",
+  "original": "monday.com",
+  "avoid_names": ["monday", "mondaycom", "monday.com"],
+  "avoid_domains": ["monday.com"],
+  "avoid_colors": ["#0073ea", "#6161ff", "#00c875", "#fdab3d", "#e2445c", "#c4c4c4"],
+  "allowed_mentions": ["Import from monday export", "Open in monday.com", "tools/monday-*.mjs", "data/import"],
+  "notes": "Mentions of the original are allowed only where they name the data source of the import feature."
+}
