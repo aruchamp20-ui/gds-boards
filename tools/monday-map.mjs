@@ -83,6 +83,7 @@ export function mapColumn(mc, index, boardId, now) {
     case 'creation_log': case 'pulse-log': return t('creation_log', {});
     case 'last_updated': case 'pulse-updated': return t('last_updated', {});
     case 'item_id': case 'pulse-id': return t('item_id', {});
+    case 'file': return t('file', {});
     default: return t('text', {}, { description: base.description || `Imported from a monday "${mc.type}" column, shown as text` });
   }
 }
@@ -140,7 +141,11 @@ export function mapValue(mc, col, cv, ctx) {
     case 'hour': return v?.hour == null ? null : { text: `${pad(v.hour)}:${pad(v.minute || 0)}` };
     case 'world_clock': return asText(v?.timezone || text);
     case 'color_picker': return asText(v?.color?.hex || text);
-    case 'file': { const names = (v?.files || []).map((f) => f.name).filter(Boolean); return names.length ? { text: names.join(', ') } : asText(text); }
+    case 'file': { // links point at the files where they live in monday; they open for anyone signed in there
+      const files = (cv.files || []).map((f) => (f.asset || f.__typename === 'FileAssetValue' ? { name: f.name || f.asset?.name || 'file', url: f.asset?.url || '', ext: f.asset?.file_extension || '', is_image: !!f.is_image, thumb: f.asset?.url_thumbnail || null, size: f.asset?.file_size || null } : { name: f.name || f.url || 'link', url: f.url || '', ext: '', is_image: false })).filter((f) => f.url || f.name);
+      if (files.length) return { files };
+      const names = (v?.files || []).map((f) => f.name).filter(Boolean); return names.length ? { files: names.map((n) => ({ name: n, url: '', ext: '', is_image: false })) } : null;
+    }
     default: return asText(text);
   }
 }
@@ -165,5 +170,6 @@ export function htmlToText(html, fallback = '') {
 }
 export function mapUpdate(u, boardId, ctx, parentId = null) {
   const creator = u.creator_id ? ctx.user(u.creator_id) : null;
-  return { id: `mup_${u.id}`, monday_id: String(u.id), item_id: `mi_${u.item_id || ctx.itemOfUpdate?.(u.id) || ''}`, board_id: `mb_${boardId}`, parent_update_id: parentId, creator_id: creator, body: htmlToText(u.body, u.text_body).slice(0, 46000), pinned: !!(u.pinned_to_top && u.pinned_to_top.length), likes: [...new Set((u.likes || []).map((l) => l.creator_id).filter(Boolean).map((id) => ctx.user(id)))], seen_by: creator ? [creator] : [], edited_at: u.updated_at && u.updated_at !== u.created_at ? u.updated_at : null, created_at: u.created_at || ctx.now };
+  const attachments = (u.assets || []).filter((a) => a && (a.url || a.name)).map((a) => ({ name: a.name || 'file', url: a.url || '', ext: a.file_extension || '', size: a.file_size || null }));
+  return { id: `mup_${u.id}`, monday_id: String(u.id), item_id: `mi_${u.item_id || ctx.itemOfUpdate?.(u.id) || ''}`, board_id: `mb_${boardId}`, parent_update_id: parentId, creator_id: creator, body: htmlToText(u.body, u.text_body).slice(0, 46000), pinned: !!(u.pinned_to_top && u.pinned_to_top.length), likes: [...new Set((u.likes || []).map((l) => l.creator_id).filter(Boolean).map((id) => ctx.user(id)))], seen_by: creator ? [creator] : [], edited_at: u.updated_at && u.updated_at !== u.created_at ? u.updated_at : null, created_at: u.created_at || ctx.now, ...(attachments.length ? { attachments } : {}) };
 }

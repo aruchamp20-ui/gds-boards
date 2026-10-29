@@ -81,7 +81,7 @@ function renderHeader(b, views, v, draft) {
   const star = h('button', { type: 'button', class: `icon-btn sm star ${fav ? 'active' : ''}`, 'aria-label': fav ? 'Remove from favorites' : 'Add to favorites', 'aria-pressed': fav, onclick: () => data.toggleFavorite(b.id) }, icon('star', 'sm'));
   if (fav) star.querySelector('svg').style.fill = 'currentColor';
   const lv = Object.entries(b.last_viewed || {}).sort((a, c) => c[1].localeCompare(a[1])).map(([id]) => data.user(id)).filter(Boolean);
-  const viewed = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: 'Activity log and who viewed the board', 'aria-label': 'Open the activity log', onclick: () => setParam('log', 'viewed') }, avatarGroup(lv, 3, 'sm'));
+  const viewed = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', title: 'Activity log and who viewed the board', 'aria-label': 'Open the activity log', onclick: () => setParam('log', '1') }, avatarGroup(lv, 3, 'sm'));
   const more = h('button', { type: 'button', class: 'icon-btn', 'aria-label': 'Board menu', onclick: () => openMenu(more, boardMenuItems(b), { align: 'end' }) }, icon('dots'));
   const tabs = h('div', { class: 'views-bar', role: 'tablist', 'aria-label': 'Board views' });
   for (const x of views) {
@@ -339,6 +339,8 @@ export function describeActivity(a, ctx) {
     case 'item_deleted': return [h('div', { class: 'what' }, 'Deleted ', h('b', {}, a.old_value))];
     case 'item_archived': return [h('div', { class: 'what' }, 'Archived ', h('b', {}, a.old_value))];
     case 'item_restored': return [h('div', { class: 'what' }, 'Restored ', h('b', {}, a.new_value))];
+    case 'update_posted': return [h('div', { class: 'what' }, 'Posted an update on ', h('b', {}, name)), h('div', { class: 'delta muted' }, String(a.new_value || '').slice(0, 120))];
+    case 'reply_posted': return [h('div', { class: 'what' }, 'Replied on ', h('b', {}, name)), h('div', { class: 'delta muted' }, String(a.new_value || '').slice(0, 120))];
     case 'group_created': return [h('div', { class: 'what' }, 'Added group ', h('b', {}, a.new_value))];
     case 'group_renamed': return [h('div', { class: 'what' }, 'Renamed group ', h('b', {}, a.old_value), ' → ', h('b', {}, a.new_value))];
     case 'group_deleted': return [h('div', { class: 'what' }, 'Deleted group ', h('b', {}, a.old_value))];

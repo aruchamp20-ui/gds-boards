@@ -32,6 +32,7 @@ function ourText(col, v, item) {
     case 'phone': return v.phone;
     case 'rating': return String(v.rating);
     case 'text': case 'long_text': return v.text;
+    case 'file': return (v.files || []).map((f) => f.name).join(', ');
     default: return '';
   }
 }

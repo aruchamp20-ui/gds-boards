@@ -28,13 +28,14 @@ export function renderItemPanel(it, ctx, { tab = 'updates', onClose }) {
   const mk = (id, label) => h('button', { type: 'button', role: 'tab', class: 'view-tab', 'aria-selected': tab === id, onclick: () => { tab = id; [...tabs.children].forEach((t) => t.setAttribute('aria-selected', t.dataset.tab === id)); draw(); }, dataset: { tab: id } }, label);
   tabs.append(mk('updates', `Updates${count ? ` (${count})` : ''}`), mk('activity', 'Activity log'));
   panel.append(tabs, body);
+  let colsOpen = columns.length <= 8; // wide boards fold the column list so the conversation and log stay in view
   function draw() {
     body.replaceChildren();
-    const grid = h('div', { class: 'ip-cols' });
-    columns.forEach((c) => { grid.append(h('div', { class: 'k' }, icon(typeOf(c).icon, 'sm'), ' ', c.title)); const cell = renderCell(it, c, ctx); cell.dataset.col = c.id; grid.append(cell); });
-    body.append(grid);
     if (tab === 'updates') { data.markSeen(it.id); body.append(renderUpdates(it, ctx)); }
     else body.append(activityList(data.activityOf(b.id, { itemId: it.id }), ctx));
+    const toggle = h('button', { type: 'button', class: 'btn btn-ghost btn-sm', 'aria-expanded': colsOpen, style: { margin: 'var(--space-3) 0 var(--space-2)' }, onclick: () => { colsOpen = !colsOpen; draw(); } }, icon(colsOpen ? 'chevD' : 'chevR', 'sm'), `${columns.length} columns`);
+    body.append(toggle);
+    if (colsOpen) { const grid = h('div', { class: 'ip-cols' }); columns.forEach((c) => { grid.append(h('div', { class: 'k' }, icon(typeOf(c).icon, 'sm'), ' ', c.title)); const cell = renderCell(it, c, ctx); cell.dataset.col = c.id; grid.append(cell); }); body.append(grid); }
   }
   draw();
   panel.addEventListener('keydown', (e) => { // focus trap
@@ -90,6 +91,7 @@ function renderUpdate(u, replies, it, ctx, isReply = false) {
   el.append(avatar(who, isReply ? 'sm' : 'md'), h('div', { class: 'ubody' },
     h('div', { class: 'uhead' }, h('span', { class: 'who' }, who?.name || 'Someone'), h('span', { class: 'when', title: fmtDateTime(u.created_at) }, relTime(u.created_at)), u.edited_at ? h('span', { class: 'when' }, '(edited)') : null, u.pinned ? h('span', { class: 'when', style: { display: 'inline-flex', alignItems: 'center', gap: '2px' } }, icon('pin', 'sm'), 'Pinned') : null, h('span', { class: 'spacer' }), moreBtn),
     text,
+    u.attachments?.length ? h('div', { class: 'attachments' }, u.attachments.map((a) => (a.url ? h('a', { class: 'file-chip', href: a.url, target: '_blank', rel: 'noopener', title: a.name }, icon(/\.(png|jpe?g|gif|webp)$/i.test(a.name) ? 'image' : 'file', 'sm'), a.name) : h('span', { class: 'file-chip' }, icon('file', 'sm'), a.name)))) : null,
     h('div', { class: 'uactions' }, likeBtn, replyBtn, seen.length ? h('span', { title: `Seen by ${seen.join(', ')}`, style: { display: 'inline-flex', alignItems: 'center', gap: '4px' } }, icon('eye', 'sm'), seen.length) : null),
     isReply ? null : repliesEl));
   return el;

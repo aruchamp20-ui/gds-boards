@@ -43,13 +43,13 @@ if (limit) selected = selected.slice(0, limit);
 log(`selected ${selected.length} of ${all.length} boards, ${selected.reduce((a, b) => a + (b.items_count || 0), 0)} items`);
 
 /* ---------- per-board export ---------- */
-const FRAGS = ['... on MirrorValue { display_value }', '... on BoardRelationValue { display_value }', '... on DependencyValue { display_value }', '... on FormulaValue { display_value }'];
+const FRAGS = ['... on MirrorValue { display_value }', '... on BoardRelationValue { display_value }', '... on DependencyValue { display_value }', '... on FormulaValue { display_value }', '... on FileValue { files { __typename ... on FileAssetValue { name is_image asset { name url file_extension url_thumbnail file_size } } ... on FileLinkValue { name url } ... on FileDocValue { url } } }'];
 let frags = [...FRAGS];
 const cvFields = () => `id type text value ${frags.join(' ')}`;
 async function withFragFallback(fn) { // drop fragments the API version does not know
   for (;;) { try { return await fn(); } catch (e) { const m = /on (\w+Value)/.exec(String(e.message)); const bad = m && frags.find((f) => f.includes(m[1])); if (!bad || !/Unknown|Cannot query|doesn't exist|does not exist|undefined/i.test(e.message)) throw e; log(`  dropping fragment ${bad} (${e.message.slice(0, 80)})`); frags = frags.filter((f) => f !== bad); } }
 }
-let updatesQuery = `updates(limit: 100, page: $p) { id item_id creator_id body text_body created_at updated_at pinned_to_top { item_id } likes { creator_id } replies { id creator_id body text_body created_at updated_at } }`;
+let updatesQuery = `updates(limit: 100, page: $p) { id item_id creator_id body text_body created_at updated_at pinned_to_top { item_id } likes { creator_id } assets { name url file_extension file_size } replies { id creator_id body text_body created_at updated_at } }`;
 const errors = []; const entries = [];
 
 async function exportBoard(b, index) {

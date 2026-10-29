@@ -53,9 +53,11 @@ export function renderTable(model) {
       for (const w of windows) {
         if (w.win.contains(document.activeElement)) continue; // never pull a cell out from under an open editor
         const offset = w.win.getBoundingClientRect().top - base + top;
-        const start = Math.max(0, Math.floor((top - offset) / ROW) - BUFFER);
-        const end = Math.max(start, Math.min(w.items.length, Math.ceil((bottom - offset) / ROW) + BUFFER));
-        if (start !== w.start || end !== w.end) fill(w, start, end);
+        const visStart = Math.max(0, Math.floor((top - offset) / ROW)), visEnd = Math.max(visStart, Math.min(w.items.length, Math.ceil((bottom - offset) / ROW)));
+        // hysteresis: refill only when the viewport gets within a third of the buffer of a window edge, not on every tick
+        const nearStart = visStart < w.start + BUFFER / 3 && w.start > 0, nearEnd = visEnd > w.end - BUFFER / 3 && w.end < w.items.length;
+        if (!nearStart && !nearEnd && visStart >= w.start && visEnd <= w.end) continue;
+        fill(w, Math.max(0, visStart - BUFFER), Math.min(w.items.length, visEnd + BUFFER));
       }
     };
     let ticking = false;
