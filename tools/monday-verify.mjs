@@ -59,6 +59,16 @@ function mondayText(mcType, cv) {
   }
 }
 
+// structural check over EVERY board file: group ids unique across the export, each item in a group of its own board, each value on a column of that board
+const seenGroups = new Set(); let structural = 0;
+for (const entry of index.boards) {
+  const b = JSON.parse(readFileSync(`${dir}/${entry.file}`, 'utf8'));
+  const gids = new Set(b.groups.map((g) => g.id)); const cids = new Set(b.columns.map((c) => c.id));
+  for (const g of b.groups) { if (seenGroups.has(g.id)) { structural++; console.log(`STRUCT ${entry.name}: group id ${g.id} also used by another board`); } seenGroups.add(g.id); if (g.board_id !== b.board.id) { structural++; console.log(`STRUCT ${entry.name}: group ${g.id} belongs to ${g.board_id}`); } }
+  for (const it of b.items) { if (!gids.has(it.group_id)) { structural++; if (structural < 20) console.log(`STRUCT ${entry.name}: item ${it.name} in unknown group ${it.group_id}`); } for (const cid of Object.keys(it.values)) if (!cids.has(cid)) { structural++; if (structural < 20) console.log(`STRUCT ${entry.name}: item ${it.name} has a value for unknown column ${cid}`); } }
+}
+console.log(`STRUCTURE: ${structural} problem(s) across ${index.boards.length} boards`);
+
 const stats = {}; const examples = []; let countMismatch = 0;
 for (const entry of boards) {
   const bundle = JSON.parse(readFileSync(`${dir}/${entry.file}`, 'utf8'));
@@ -66,7 +76,7 @@ for (const entry of boards) {
   if (entry.monday_items_count != null && active !== entry.monday_items_count) { countMismatch++; console.log(`COUNT  ${entry.name}: clone ${active} vs monday ${entry.monday_items_count}`); }
   if (!bundle.items.length) continue;
   const picks = []; const step = Math.max(1, Math.floor(bundle.items.length / perBoard)); for (let i = 0; i < bundle.items.length && picks.length < perBoard; i += step) picks.push(bundle.items[i]);
-  const d = await gql(`query($ids: [ID!]) { items(ids: $ids, limit: 50) { id name column_values { id type text value ... on MirrorValue { display_value } ... on BoardRelationValue { display_value } ... on DependencyValue { display_value } } } }`, { ids: picks.map((p) => p.monday_id) });
+  const d = await gql(`query($ids: [ID!]) { items(ids: $ids, limit: 50) { id name column_values { id type text value ... on MirrorValue { display_value } ... on BoardRelationValue { display_value } ... on DependencyValue { display_value } ... on FormulaValue { display_value } } } }`, { ids: picks.map((p) => p.monday_id) });
   const live = new Map((d.items || []).map((it) => [String(it.id), it]));
   const cols = bundle.columns.filter((c) => c.type !== 'name');
   for (const p of picks) {
@@ -86,4 +96,4 @@ for (const [k, s] of Object.entries(stats).sort()) console.log(`  ${k.padEnd(34)
 const total = Object.values(stats).reduce((a, s) => ({ ok: a.ok + s.ok, bad: a.bad + s.bad }), { ok: 0, bad: 0 });
 console.log(`\nTOTAL cells ${total.ok + total.bad}: ${total.ok} match, ${total.bad} differ (${((100 * total.bad) / Math.max(1, total.ok + total.bad)).toFixed(1)}%); boards with count mismatch: ${countMismatch} of ${boards.length}`);
 if (examples.length) { console.log('\nEXAMPLES'); examples.forEach((e) => console.log('  ' + e)); }
-process.exit(countMismatch || total.bad / Math.max(1, total.ok + total.bad) > 0.02 ? 1 : 0);
+process.exit(structural || countMismatch || total.bad / Math.max(1, total.ok + total.bad) > 0.02 ? 1 : 0);

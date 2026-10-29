@@ -27,6 +27,7 @@ export function localDateTime(date, time) {
   if (Number.isNaN(d.getTime())) return { date, time: null };
   return { date: `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, time: `${pad(d.getHours())}:${pad(d.getMinutes())}` };
 }
+export const decodeEntities = (s) => (s == null ? s : String(s).replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(Number(n))));
 export function parseNumber(text) { if (text == null) return null; const s = String(text).replace(/[^0-9.\-]/g, ''); if (s === '' || s === '-' || s === '.') return null; const n = Number(s); return Number.isFinite(n) ? n : null; }
 
 /* ---------- users, teams, workspace, folders ---------- */
@@ -47,7 +48,8 @@ export function mapBoard(b, { index, wsId, now, folderIds }) {
   const owners = (b.owners || []).map((u) => userId(u.id)); const subs = (b.subscribers || []).map((u) => userId(u.id));
   return { id: `mb_${b.id}`, monday_id: String(b.id), workspace_id: `mw_${wsId}`, folder_id: folder, name: b.name, description: (b.description || '').slice(0, 1000), kind: ['public', 'private', 'share'].includes(b.board_kind) ? b.board_kind : 'public', state: 'active', permissions: ['everyone', 'collaborators', 'assignee', 'owners'].includes(b.permissions) ? b.permissions : 'everyone', item_terminology: (b.item_terminology || 'item').toLowerCase(), position: index + 1, created_by: b.creator?.id ? userId(b.creator.id) : owners[0] || null, owner_ids: owners, subscriber_ids: [...new Set([...owners, ...subs])], deleted_at: null, created_at: b.updated_at || now, updated_at: b.updated_at || now, last_viewed: {}, source: { kind: 'monday', board_id: String(b.id), url: b.url || `https://gdsinternational.monday.com/boards/${b.id}`, imported_at: now, items_count: b.items_count ?? null } };
 }
-export function mapGroup(g, index, boardId, now) { return { id: `mg_${g.id}`, monday_id: g.id, board_id: `mb_${boardId}`, title: g.title || 'Group', color: paletteFor(g.color), position: Number.isFinite(parseFloat(g.position)) ? parseFloat(g.position) : index + 1, archived: !!(g.archived || g.deleted), created_at: now }; }
+export const groupId = (boardId, gid) => `mg_${boardId}_${gid}`; // monday group ids like "topics" repeat across boards
+export function mapGroup(g, index, boardId, now) { return { id: groupId(boardId, g.id), monday_id: g.id, board_id: `mb_${boardId}`, title: g.title || 'Group', color: paletteFor(g.color), position: Number.isFinite(parseFloat(g.position)) ? parseFloat(g.position) : index + 1, archived: !!(g.archived || g.deleted), created_at: now }; }
 
 export function statusLabels(settings) {
   const s = settings || {}; const labels = s.labels || {}; const colors = s.labels_colors || {}; const done = new Set((s.done_colors || []).map(Number)); const pos = s.labels_positions_v2 || {};
@@ -113,6 +115,7 @@ export function mapValue(mc, col, cv, ctx) {
     case 'tags': { const names = text ? String(text).split(',').map((s) => s.trim()).filter(Boolean) : []; return names.length ? { ids: names.map((n) => ctx.tagOption(col, n)) } : null; }
     case 'people': case 'person': case 'team': case 'multiple-person': {
       const pt = v?.personsAndTeams || []; const names = text ? String(text).split(',').map((s) => s.trim()) : [];
+      if (!pt.length && names.length && ctx.userByName) return { user_ids: names.map((n) => ctx.userByName(n)) }; // deleted members: no ids at all, only the names in text
       const sameOrder = names.length === pt.length; // monday's text lists the same people in the same order, which names deactivated users the users query no longer returns
       const user_ids = pt.map((p, i) => (p.kind !== 'team' ? ctx.user(p.id, sameOrder ? names[i] : null) : null)).filter(Boolean); // kinds: person | team | agent
       const team_ids = pt.filter((p) => p.kind === 'team').map((p) => `mt_${p.id}`);
@@ -128,7 +131,7 @@ export function mapValue(mc, col, cv, ctx) {
     case 'email': return v?.email ? { email: v.email } : null;
     case 'phone': return v?.phone ? { phone: String(v.phone) } : null;
     case 'rating': return v?.rating ? { rating: Number(v.rating) } : null;
-    case 'long_text': case 'long-text': return asText(v?.text ?? text);
+    case 'long_text': case 'long-text': return asText(text || decodeEntities(v?.text)); // value.text is HTML-escaped; the text field is decoded and keeps newlines
     case 'text': return asText(text);
     case 'creation_log': case 'pulse-log': case 'last_updated': case 'pulse-updated': case 'item_id': case 'pulse-id': return null;
     case 'mirror': case 'lookup': case 'board_relation': case 'board-relation': case 'dependency': case 'formula': return asText(cv.display_value ?? text);
@@ -147,7 +150,7 @@ export function mapItem(it, boardId, colsByMondayId, mcolsById, ctx) {
     const col = colsByMondayId[cv.id]; const mc = mcolsById[cv.id]; if (!col || !mc || col.type === 'name') continue;
     const v = mapValue(mc, col, cv, ctx); if (v != null) values[col.id] = v;
   }
-  return { id: `mi_${it.id}`, monday_id: String(it.id), seq: Number(it.id), board_id: `mb_${boardId}`, group_id: `mg_${it.group?.id}`, parent_item_id: null, name: it.name, position: Number(ctx.position++), state: 'active', created_by: it.creator_id ? ctx.user(it.creator_id) : null, deleted_at: null, created_at: it.created_at || ctx.now, updated_at: it.updated_at || it.created_at || ctx.now, values };
+  return { id: `mi_${it.id}`, monday_id: String(it.id), seq: Number(it.id), board_id: `mb_${boardId}`, group_id: groupId(boardId, it.group?.id), parent_item_id: null, name: it.name, position: Number(ctx.position++), state: 'active', created_by: it.creator_id ? ctx.user(it.creator_id) : null, deleted_at: null, created_at: it.created_at || ctx.now, updated_at: it.updated_at || it.created_at || ctx.now, values };
 }
 
 /* ---------- updates ---------- */

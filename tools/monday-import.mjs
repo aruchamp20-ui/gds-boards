@@ -27,7 +27,10 @@ const mFolders = fRes.folders || []; const folderIds = new Set(mFolders.map((f) 
 log(`account: ${mUsers.length} users, ${teams.length} teams, workspace "${ws.name}" with ${mFolders.length} folders`);
 
 const users = new Map(mUsers.map((u) => [M.userId(u.id), M.mapUser(u)]));
-const ctxBase = { now, user: (id, name = null) => { const cid = M.userId(id); let u = users.get(cid); if (!u) { u = M.placeholderUser(id); users.set(cid, u); } if (name && u.deactivated && /^Former user /.test(u.name)) u.name = name; return cid; } };
+const ctxBase = { now,
+  user: (id, name = null) => { const cid = M.userId(id); let u = users.get(cid); if (!u) { u = M.placeholderUser(id); users.set(cid, u); } if (name && u.deactivated && /^Former user /.test(u.name)) u.name = name; return cid; },
+  userByName: (name) => { const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''); const cid = `mu_name_${slug || 'unknown'}`; if (!users.has(cid)) users.set(cid, { ...M.placeholderUser(slug), id: cid, monday_id: null, name: name.replace(/\b\w/g, (c) => c.toUpperCase()) }); return cid; },
+};
 
 /* ---------- board selection ---------- */
 const all = [];
@@ -69,7 +72,7 @@ async function exportBoard(b, index) {
     const q = cursor ? `query($c: String!) { next_items_page(cursor: $c, limit: 500) { cursor items { id name created_at updated_at creator_id group { id } column_values { ${cvFields()} } } } }` : `query($id: [ID!]) { boards(ids: $id) { items_page(limit: 500) { cursor items { id name created_at updated_at creator_id group { id } column_values { ${cvFields()} } } } } }`;
     const d = await withFragFallback(() => gql(q, cursor ? { c: cursor } : { id: [b.id] }));
     const pg = cursor ? d.next_items_page : d.boards?.[0]?.items_page; if (!pg) break;
-    for (const it of pg.items) { const m = M.mapItem(it, mb.id, colsByMondayId, mcolsById, ctx); if (!groupIds.has(m.group_id)) { groups.push({ id: m.group_id, monday_id: it.group?.id, board_id: board.id, title: 'Other', color: 'grey', position: groups.length + 1, archived: false, created_at: now }); groupIds.add(m.group_id); } items.push(m); }
+    for (const it of pg.items) { const m = M.mapItem(it, mb.id, colsByMondayId, mcolsById, ctx); if (!groupIds.has(m.group_id)) { groups.push({ id: m.group_id, monday_id: it.group?.id || null, board_id: board.id, title: 'Other', color: 'grey', position: groups.length + 1, archived: false, created_at: now }); groupIds.add(m.group_id); } items.push(m); }
     pages++; cursor = pg.cursor; if (!cursor || !pg.items.length) break;
     if (pages > 200) { log(`  ${b.name}: stopped after 200 item pages`); break; }
   }
