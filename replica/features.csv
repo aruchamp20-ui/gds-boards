@@ -1,0 +1,97 @@
+feature,area,priority,original,clone,notes
+Create a workspace,workspaces,must,yes,yes,
+Switch workspaces from the left pane dropdown (pinned and recent),workspaces,must,yes,yes,
+Workspace home with board list and recents,workspaces,must,yes,yes,
+Create a board with name and type (main / shareable / private),boards,must,yes,yes,
+Rename a board and edit its description,boards,must,yes,yes,
+Archive or delete a board and restore it from trash within 30 days,boards,must,yes,yes,purge job is /replica-backend
+Duplicate a board (structure only / with items / with items and updates),boards,should,yes,yes,
+Favourite a board with the star and see it under Favorites,navigation,must,yes,yes,
+Groups: add from New item menu or Add new group; rename; recolour (18 colours),groups,must,yes,yes,
+Collapse one group or all groups (Ctrl+G),groups,must,yes,yes,
+Reorder groups by drag,groups,must,yes,yes,menu has move to top/bottom for keyboard users
+Duplicate a group with or without updates,groups,should,yes,yes,
+Delete a group (the last group is protected),groups,must,yes,yes,
+Add an item at the bottom of a group with the + Add row and Enter,items,must,yes,yes,
+New item button adds an item to the top of the first group,items,must,yes,yes,
+Rename an item inline,items,must,yes,yes,
+Item menu: open card / duplicate / create below / move to group / archive / delete,items,must,yes,yes,
+Reorder items by drag within and across groups,items,must,yes,yes,
+Select items with checkboxes and act on them in a batch bar,items,must,yes,yes,
+Deleted items restorable within 30 days,items,should,yes,yes,
+Add a column from the column center (searchable),columns,must,yes,yes,
+Column type: Status with coloured labels,columns,must,yes,yes,
+Column type: People with multi-assign and avatars,columns,must,yes,yes,
+Column type: Date with a picker that opens on today,columns,must,yes,yes,
+Column type: Text and Long text,columns,must,yes,yes,
+Column type: Numbers with sum in the group summary,columns,must,yes,yes,
+Column type: Dropdown (multi-select labels),columns,must,yes,yes,
+Column type: Checkbox,columns,must,yes,yes,
+Column type: Timeline (from and to),columns,should,yes,yes,
+Column types: Link / Email / Phone,columns,should,yes,yes,
+Column type: Rating,columns,could,yes,yes,
+Column types: Creation log / Last updated / Item ID (read-only),columns,should,yes,yes,
+Column header: rename / resize by drag / reorder by drag / duplicate / delete,columns,must,yes,yes,
+Status labels editor: rename / recolour / reorder / add / deactivate; choose done colours,columns,must,yes,yes,done is a per-label tick rather than per colour
+Column summary in the group footer (status bar / people / number sum),columns,should,yes,yes,
+Column description,columns,could,yes,yes,
+Item card with every column editable,item card,must,yes,yes,
+Updates: post with basic rich text and @mentions,updates,must,yes,yes,bold / italic / lists only; no images or files
+Updates: reply / like / pin to top / edit / delete,updates,must,yes,yes,
+Updates bubble on the row with count; blue within 7 days else grey,updates,must,yes,yes,
+Item activity log tab (when / who / column / old -> new),activity,must,yes,yes,
+Board activity log with person filter,activity,must,yes,yes,
+Board search bar across chosen columns,find,must,yes,yes,
+Person filter,find,must,yes,yes,
+Quick filters with item counts,find,must,yes,yes,
+Advanced filters: column / condition / value with and-or,find,must,yes,yes,
+Sort and subsort by any column; header arrows; clear,find,must,yes,yes,
+Hide columns with the eye icon and an All columns toggle,find,must,yes,yes,
+Save filter / sort / hidden columns as a new view,views,must,yes,yes,
+Views bar: add Table view; rename / duplicate / delete / reorder / pin,views,must,yes,yes,
+Kanban view: lanes from a chosen status column,views,must,yes,yes,
+Kanban: drag a card between lanes changes the status; + in a lane adds an item,views,must,yes,yes,
+Kanban: choose card columns; divide by group; lane item limit,views,should,yes,yes,divide by is status or dropdown; groups come next
+Calendar view: month / week / day from a chosen date column,views,must,yes,yes,
+Calendar: click a day to add an item with that date; click a chip to open the item,views,must,yes,yes,chips can also be dragged to another day
+My Work: items assigned to me in six date buckets with counts,my work,must,yes,yes,
+My Work: hide done / customize boards and people / keyword search,my work,should,yes,yes,
+Search everything (boards / items / people) and Ctrl+B quick search,find,must,yes,yes,Ctrl+B focuses the top search rather than a palette
+Notifications bell for mentions and assignments,notifications,should,yes,yes,
+Keyboard: Esc / Enter edit / Tab next cell / Ctrl+G / Ctrl+Shift+G / Ctrl+Shift+C / Ctrl+Shift+L,keyboard,should,yes,yes,arrow keys move between cells too
+Item terminology (call items "books"),boards,could,yes,yes,
+Item default values,boards,could,yes,no,
+Board permissions: edit everything / only content / only assigned / view and comment,permissions,should,yes,partial,board type and owner-only actions exist; the four permission sets are stored but not enforced until /replica-backend
+Private boards visible only to subscribers,permissions,should,yes,yes,
+Board owners and subscribers,permissions,should,yes,yes,Invite dialog on the board header
+Last viewed avatars in the board header,boards,could,yes,yes,
+Folders inside a workspace (3 levels),workspaces,should,yes,partial,one level of folders
+Move a board to another workspace or folder,workspaces,should,yes,no,
+Subitems under an item,items,should,yes,no,
+Export the table view to CSV,export,could,yes,yes,
+Item height and wrap text,boards,could,yes,no,
+Pin (freeze) columns,columns,could,yes,partial,the item name column is always frozen; others cannot be pinned
+Collapse a column,columns,could,yes,no,
+Bring it back: apply the active filter value to a new item,find,could,yes,no,
+Board discussions,updates,could,yes,no,
+Lock a view,views,could,yes,no,
+Hide the main table from non-owners,views,could,yes,no,
+Scheduled updates / update reminders / bookmarks,updates,could,yes,no,
+Checklist inside an update,updates,could,yes,no,
+Files in updates and a Files column,files,should,yes,no,needs Vercel Blob in /replica-backend
+Teams that can be assigned and mentioned,people,should,yes,partial,teams can be mentioned; assigning a team is not built
+Sign in and invite members,auth,must,yes,no,/replica-backend; a demo user switcher stands in for it
+Multi-user realtime refresh,backend,should,yes,no,/replica-backend
+Automations,automations,could,yes,skip,their recipe engine and partner triggers are not part of the slice
+Integrations and the apps marketplace,integrations,could,yes,skip,their partner network
+AI Sidekick / agents / Vibe / Notetaker / AI columns,ai,could,yes,skip,their models and credits
+Docs,docs,could,yes,skip,a separate product
+Dashboards across boards,dashboards,could,yes,skip,a separate product; could return as a should later
+Forms view,views,could,yes,skip,separate product surface
+Gantt / Timeline / Workload / Chart / Map / Files gallery views,views,could,yes,skip,advanced views outside the core loop
+Time tracking column,columns,could,yes,skip,Pro feature outside the slice
+Connect boards / Mirror / Dependency / Formula columns,columns,could,yes,skip,cross-board engine; revisit after must-haves
+Templates center and imports from Excel or Trello,onboarding,could,yes,skip,their template library
+Guests and Enterprise permissions,permissions,could,yes,skip,Enterprise surface
+Mobile apps,mobile,could,yes,skip,web only
+Public board sharing and embeds,sharing,could,yes,skip,needs the hosted backend first
