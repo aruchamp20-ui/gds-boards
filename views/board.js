@@ -22,13 +22,13 @@ const isDirty = (v, d) => JSON.stringify(d.filter) !== JSON.stringify(v.filter) 
 export const setFocusTarget = (t) => { focusTarget = t; };
 
 export function makeCtx(b) {
-  const cols = () => data.columnsOf(b.id);
+  const statusCol = data.columnsOf(b.id).find((c) => c.type === 'status'); // resolved once per render, not per cell
   return {
     board: b, users: data.users(), teams: data.teams(), me: data.me().id,
     setValue: (item, col, value) => { focusTarget = { itemId: item.id, colId: col.id }; return data.setValue(item, col, value); },
     updateColumn: (col, patch) => data.updateColumn(col.id, patch),
     openLabelEditor: (col) => openLabelEditor(col),
-    itemIsDone: (item) => { const sc = cols().find((c) => c.type === 'status'); return sc ? TYPES.status.isDone(item.values[sc.id], sc) : false; },
+    itemIsDone: (item) => (statusCol ? TYPES.status.isDone(item.values[statusCol.id], statusCol) : false),
     openItem: (item, tab) => { setParam('item', item.id); if (tab) setParam('tab', tab); },
     rerender: () => window.dispatchEvent(new HashChangeEvent('hashchange')),
   };

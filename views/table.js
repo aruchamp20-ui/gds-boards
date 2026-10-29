@@ -2,10 +2,10 @@
 import { h, icon, openMenu, openPopover, confirmDialog, promptDialog, toast, editInline, colorVar, LABEL_COLORS } from '../lib/ui.js';
 import * as data from '../lib/data.js';
 import { typeOf, renderCell, cellText } from '../lib/columns.js';
-import { openColumnCenter, openLabelEditor, setFocusTarget } from './board.js';
+import { openColumnCenter, openLabelEditor, setFocusTarget, focusTarget } from './board.js';
 
-const ROWS_PER_PAGE = 200;
-const shownRows = new Map(); // group id -> rows revealed this session
+const ROW = 36;   // must equal --layout-row: item rows are fixed-height so the window spacers can stand in for unrendered rows
+const BUFFER = 30; // rows rendered above and below the viewport
 export function renderTable(model) {
   const { board: b, view: v, draft, ctx, columns, groups, visible, selection, onSelect } = model;
   const nameCol = columns.find((c) => c.type === 'name');
@@ -13,6 +13,7 @@ export function renderTable(model) {
   const dataCols = shown.filter((c) => c.type !== 'name');
   const colsTemplate = () => `40px ${nameCol.width}px ${dataCols.map((c) => `${c.width}px`).join(' ')} 48px`;
   const root = h('div', { class: 'table-view' });
+  const windows = []; // one per group: {g, items, win, start, end}
   const filtered = draft.filter.rules.length || draft.search || draft.person;
   const visibleIds = new Set(visible.map((i) => i.id));
   const sortedOrder = new Map(visible.map((i, idx) => [i.id, idx]));
@@ -28,7 +29,40 @@ export function renderTable(model) {
   if (!groups.length) root.append(h('div', { class: 'empty' }, h('h3', {}, 'This board has no groups'), h('button', { type: 'button', class: 'btn btn-primary', onclick: () => data.createGroup(b.id) }, 'Add a group')));
   root.append(h('button', { type: 'button', class: 'btn btn-secondary btn-sm add-group', onclick: () => data.createGroup(b.id, { where: 'bottom' }) }, icon('plus', 'sm'), 'Add new group'));
   root.addEventListener('keydown', onCellArrows);
+  mountWindows();
   return root;
+
+  // Row windowing: each group renders only the rows near the viewport; two spacers keep the scroll height honest.
+  // shortcut: rows must stay 36px tall (no wrap mode) and arrow-key navigation stops at the window edge; revisit if either changes
+  function windowed(g, items, win) {
+    const w = { g, items, win, start: -1, end: -1 };
+    windows.push(w);
+    let start = 0; const idx = focusTarget?.itemId ? items.findIndex((it) => it.id === focusTarget.itemId) : -1;
+    if (idx > BUFFER) start = idx - BUFFER;
+    fill(w, start, Math.min(items.length, start + 2 * BUFFER));
+  }
+  function fill(w, start, end) {
+    w.start = start; w.end = end;
+    w.win.replaceChildren(h('div', { style: { height: `${start * ROW}px` }, 'aria-hidden': 'true' }), ...w.items.slice(start, end).map((it) => renderRow(it, w.g)), h('div', { style: { height: `${(w.items.length - end) * ROW}px` }, 'aria-hidden': 'true' }));
+  }
+  function mountWindows() {
+    const outlet = document.getElementById('outlet'); if (!outlet) return;
+    const draw = () => {
+      if (!root.isConnected) { outlet.removeEventListener('scroll', onScroll); return; }
+      const top = outlet.scrollTop, bottom = top + outlet.clientHeight, base = outlet.getBoundingClientRect().top;
+      for (const w of windows) {
+        if (w.win.contains(document.activeElement)) continue; // never pull a cell out from under an open editor
+        const offset = w.win.getBoundingClientRect().top - base + top;
+        const start = Math.max(0, Math.floor((top - offset) / ROW) - BUFFER);
+        const end = Math.max(start, Math.min(w.items.length, Math.ceil((bottom - offset) / ROW) + BUFFER));
+        if (start !== w.start || end !== w.end) fill(w, start, end);
+      }
+    };
+    let ticking = false;
+    const onScroll = () => { if (ticking) return; ticking = true; requestAnimationFrame(() => { ticking = false; draw(); }); };
+    outlet.addEventListener('scroll', onScroll);
+    requestAnimationFrame(draw);
+  }
 
   function renderGroup(g, items) {
     const collapsed = !!data.prefs().collapsed[g.id];
@@ -47,9 +81,8 @@ export function renderTable(model) {
     const scroll = h('div', { class: 'grid-scroll' });
     const table = h('div', { class: 'grid-table', role: 'table', 'aria-label': g.title, style: { '--cols': colsTemplate() } });
     table.append(renderHeaderRow(g, items));
-    const cap = shownRows.get(g.id) || ROWS_PER_PAGE; // shortcut: no virtual scrolling, rows render in pages of 200; upgrade to a virtual list if boards pass ~10k rows
-    items.slice(0, cap).forEach((it) => table.append(renderRow(it, g)));
-    if (items.length > cap) { const more = h('div', { class: 'row add-row', role: 'row' }, h('div', { class: 'cell cell-check', role: 'cell' }), h('div', { class: 'cell cell-name', role: 'cell' }, h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => { shownRows.set(g.id, cap + ROWS_PER_PAGE); rerender(); } }, `Show ${Math.min(ROWS_PER_PAGE, items.length - cap)} more of ${items.length}`), h('button', { type: 'button', class: 'btn btn-ghost btn-sm', onclick: () => { shownRows.set(g.id, items.length); rerender(); } }, 'Show all'))); dataCols.forEach(() => more.append(h('div', { class: 'cell', role: 'cell' }))); more.append(h('div', { class: 'cell', role: 'cell' })); table.append(more); }
+    const win = h('div', { class: 'rows' });
+    table.append(win); windowed(g, items, win);
     table.append(renderAddRow(g));
     if (items.length && dataCols.some((c) => typeOf(c).summary)) table.append(renderSummaryRow(g, items));
     scroll.append(table); sec.append(scroll);
