@@ -17,7 +17,7 @@ svg.icon.sm { width: 14px; height: 14px; }
 .truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---------- layout ---------- */
-.app { display: grid; grid-template-columns: var(--layout-leftpane) 1fr; height: 100%; transition: grid-template-columns var(--motion-base) var(--motion-ease); }
+.app { display: grid; grid-template-columns: var(--layout-leftpane) 1fr; grid-template-rows: 100%; height: 100%; transition: grid-template-columns var(--motion-base) var(--motion-ease); }
 .app.lp-collapsed { grid-template-columns: var(--layout-leftpane-collapsed) 1fr; }
 .main { display: flex; flex-direction: column; min-width: 0; height: 100%; }
 .topbar { height: var(--layout-topbar); flex: none; display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-4); border-bottom: 1px solid var(--color-border); background: var(--color-bg); }
@@ -69,7 +69,7 @@ svg.icon.sm { width: 14px; height: 14px; }
 .checkbox { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
 
 /* ---------- left pane ---------- */
-.leftpane { display: flex; flex-direction: column; background: var(--color-surface); border-right: 1px solid var(--color-border); overflow: hidden; min-height: 0; }
+.leftpane { display: flex; flex-direction: column; background: var(--color-surface); border-right: 1px solid var(--color-border); overflow: hidden; min-height: 0; height: 100%; }
 .lp-top { display: flex; align-items: center; justify-content: space-between; height: var(--layout-topbar); padding: 0 var(--space-2) 0 var(--space-3); flex: none; }
 .lp-brand { font-weight: 700; font-size: var(--text-md); display: flex; align-items: center; gap: var(--space-2); }
 .lp-brand img { height: 26px; width: auto; display: block; }
